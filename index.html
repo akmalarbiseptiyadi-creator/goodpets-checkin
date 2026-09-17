@@ -4,334 +4,217 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>GoodPets Event Check-In</title>
+  <title>Event Check-In</title>
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
   <style>
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background: #f5f7fa;
-    }
-
-    .container {
-      max-width: 500px;
-      margin: auto;
-      padding: 25px 18px;
-    }
-
-    .header {
       text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .header h1 {
-      margin: 0;
-    }
-
-    .header p {
-      color: #777;
-    }
-
-    .card {
-      background: white;
       padding: 20px;
-      border-radius: 18px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      margin: 0;
+      background: #ffffff;
+    }
+
+    h2 {
+      margin-bottom: 10px;
     }
 
     #reader {
       width: 100%;
+      max-width: 500px;
+      margin: 20px auto;
     }
 
-    .staff-box {
-      margin-top: 20px;
-    }
-
-    .staff-box label {
-      display: block;
+    #result {
+      margin: 20px auto;
+      padding: 15px;
+      max-width: 500px;
+      font-size: 18px;
       font-weight: bold;
-      margin-bottom: 7px;
+      border-radius: 8px;
     }
 
-    .staff-box input {
-      width: 100%;
-      padding: 13px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
+    input {
+      padding: 12px;
+      width: 90%;
+      max-width: 400px;
+      margin-bottom: 15px;
       font-size: 16px;
+      box-sizing: border-box;
     }
 
-    .status {
-      margin-top: 18px;
-      padding: 14px;
-      border-radius: 10px;
-      text-align: center;
-      font-weight: bold;
-      display: none;
-    }
-
-    .success {
-      display: block;
-      background: #e8f7ed;
-      color: #16833b;
-    }
-
-    .error {
-      display: block;
-      background: #fdeaea;
-      color: #c62828;
-    }
-
-    .warning {
-      display: block;
-      background: #fff5dc;
-      color: #9a6700;
-    }
-
-    .participant {
-      text-align: center;
-      margin-top: 18px;
-    }
-
-    .participant-name {
-      font-size: 23px;
-      font-weight: bold;
-    }
-
-    .participant-id {
-      margin-top: 6px;
-      color: #777;
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
 
-<div class="container">
+  <h2>Event Check-In</h2>
 
-  <div class="header">
-    <h1>GoodPets Event</h1>
-    <p>QR Code Check-In</p>
+  <input
+    type="text"
+    id="staffName"
+    placeholder="Masukkan nama petugas"
+  >
+
+  <div id="reader"></div>
+
+  <div id="result">
+    Silakan scan QR peserta
   </div>
 
-  <div class="card">
+  <script>
 
-    <div id="reader"></div>
-
-    <div class="staff-box">
-
-      <label>Nama Staff</label>
-
-      <input
-        type="text"
-        id="staffName"
-        placeholder="Masukkan nama staff">
-
-    </div>
-
-    <div id="status" class="status"></div>
-
-    <div id="participant" class="participant"></div>
-
-  </div>
-
-</div>
+    /*
+     * URL WEB APP GOOGLE APPS SCRIPT
+     * yang sudah kamu buat sebelumnya.
+     */
+    const GAS_URL =
+      "https://script.google.com/macros/s/AKfycbz3u9rtixQ-a3uoUgtbtpS_Dk-SyiDzYr2eYyIehaX8fXkDNSX7SUlr3pEzhPGPvk-x/exec";
 
 
-<script>
-
-const GOOGLE_APPS_SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbzcVD2_ZtREdxRLki9yu72JScBuFXB030R35GTSm_PbCPRuKeWslGHIhm7rxr0piFkJ/exec";
-
-let processing = false;
+    let sudahScan = false;
 
 
-function showStatus(message, type) {
-
-  const status =
-    document.getElementById("status");
-
-  status.innerText = message;
-
-  status.className =
-    "status " + type;
-}
-
-
-function onScanSuccess(decodedText) {
-
-  if (processing) {
-    return;
-  }
-
-  processing = true;
-
-  const registrationID =
-    decodedText.trim();
-
-  const staffName =
-    document
-      .getElementById("staffName")
-      .value
-      .trim();
-
-
-  if (!staffName) {
-
-    showStatus(
-      "Masukkan nama staff terlebih dahulu.",
-      "warning"
-    );
-
-    processing = false;
-
-    return;
-  }
-
-
-  showStatus(
-    "Memproses check-in...",
-    "warning"
-  );
-
-
-  fetch(GOOGLE_APPS_SCRIPT_URL, {
-
-    method: "POST",
-
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-
-    body: JSON.stringify({
-
-      action: "checkIn",
-
-      registrationID:
-        registrationID,
-
-      staffName:
-        staffName
-
-    })
-
-  })
-
-  .then(response => response.json())
-
-  .then(result => {
-
-    if (result.success) {
-
-      showStatus(
-        "✓ " + result.message,
-        "success"
-      );
-
-      document.getElementById(
-        "participant"
-      ).innerHTML =
-
-        '<div class="participant-name">' +
-        (result.name || "Peserta") +
-        '</div>' +
-
-        '<div class="participant-id">' +
-        registrationID +
-        '</div>';
-
+    function tampilkanHasil(pesan) {
+      document.getElementById("result").innerHTML = pesan;
     }
 
-    else if (result.alreadyCheckedIn) {
 
-      showStatus(
-        "⚠ Peserta sudah check-in.",
-        "error"
-      );
+    async function kirimCheckIn(registrationID, staffName) {
 
-    }
+      /*
+       * Kirim data ke Google Apps Script.
+       *
+       * Kita menggunakan POST supaya scanner
+       * yang di-host di GitHub Pages dapat
+       * berkomunikasi dengan Apps Script.
+       */
 
-    else {
+      try {
 
-      showStatus(
-        result.message ||
-        "Registration ID tidak ditemukan.",
-        "error"
-      );
+        const response = await fetch(GAS_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify({
+            action: "checkIn",
+            registrationID: registrationID,
+            staffName: staffName
+          })
+        });
 
-    }
+        const text = await response.text();
 
-  })
+        return text;
 
-  .catch(error => {
+      } catch (error) {
 
-    console.error(error);
+        throw new Error(
+          "Gagal terhubung ke server: " + error.message
+        );
 
-    showStatus(
-      "Gagal terhubung ke sistem check-in.",
-      "error"
-    );
-
-  })
-
-  .finally(() => {
-
-    setTimeout(() => {
-      processing = false;
-    }, 2000);
-
-  });
-
-}
-
-
-function startScanner() {
-
-  const scanner =
-    new Html5Qrcode("reader");
-
-  scanner.start(
-
-    {
-      facingMode: "environment"
-    },
-
-    {
-      fps: 10,
-
-      qrbox: {
-        width: 250,
-        height: 250
       }
-    },
+    }
 
-    onScanSuccess
 
-  )
+    async function onScanSuccess(decodedText, decodedResult) {
 
-  .catch(error => {
+      // Mencegah scanner membaca QR berkali-kali
+      if (sudahScan) return;
 
-    console.error(error);
+      sudahScan = true;
 
-    showStatus(
-      "Kamera tidak dapat dibuka. Izinkan akses kamera.",
-      "error"
+
+      const registrationID = decodedText.trim();
+
+      const staffName =
+        document.getElementById("staffName").value.trim();
+
+
+      // Cek nama petugas
+      if (!staffName) {
+
+        tampilkanHasil(
+          "⚠️ Masukkan nama petugas terlebih dahulu."
+        );
+
+        sudahScan = false;
+
+        return;
+      }
+
+
+      tampilkanHasil(
+        "⏳ Memproses check-in..."
+      );
+
+
+      try {
+
+        const response = await kirimCheckIn(
+          registrationID,
+          staffName
+        );
+
+
+        tampilkanHasil(response);
+
+
+        // Beri jeda 2 detik sebelum scan berikutnya
+        setTimeout(function() {
+
+          sudahScan = false;
+
+        }, 2000);
+
+
+      } catch (error) {
+
+        tampilkanHasil(
+          "❌ " + error.message
+        );
+
+        sudahScan = false;
+
+      }
+
+    }
+
+
+    function onScanFailure(error) {
+      // Tidak perlu menampilkan error.
+      // Scanner akan terus mencoba membaca QR.
+    }
+
+
+    const html5QrcodeScanner =
+      new Html5QrcodeScanner(
+        "reader",
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          }
+        },
+        false
+      );
+
+
+    html5QrcodeScanner.render(
+      onScanSuccess,
+      onScanFailure
     );
 
-  });
-
-}
-
-
-window.onload = function() {
-
-  startScanner();
-
-};
-
-</script>
+  </script>
 
 </body>
 </html>
